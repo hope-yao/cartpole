@@ -1,7 +1,7 @@
 
 import sys
 from pylab import *
-import seaborn as sns
+# import seaborn as sns
 import math
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -27,7 +27,7 @@ class Agent(object):
     def __init__(self, input_size=4, hidden_size=2, gamma=0.95,
                  action_size=2, alpha=0.1, dir='tmp/trial/'):
         self.env = gym.make('CartPole-v0')
-        self.env = wrappers.Monitor(self.env, dir, force=True, video_callable=self.video_callable)
+        # self.env = wrappers.Monitor(self.env, dir, force=True, video_callable=self.video_callable)
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -151,7 +151,7 @@ def several_trials(agent, sess, grad_buffer, reward_itr, i, render = False):
             greedy = False
             action = agent.next_action(sess, feed_dict, greedy=greedy)
             snext, r, done, _ = agent.env.step(action)
-            if render and i % 500 == 0:
+            if render and i % 50 == 0:
                 agent.env.render()
             current_reward += r
             state_history.append(s)
