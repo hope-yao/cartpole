@@ -21,7 +21,7 @@ Besides, if your Ubuntu is 14.04, you might also need to install ffmpeg player f
 $sudo apt-get install libav-tools
 ```
 
-Simplest way to run this repo:
+The simplest way to run this repo is:
 ```
 $python main.py
 ```
@@ -31,11 +31,11 @@ $python main.py <lr> <momentum>
 ```
 
 ## Physical problem
-State space is expanded by the location and speed of cart and angle and angular velocity of the pole (denoted by x, x_dot, theta, theta_dot).
-It starts with a small purtubation on the system state.
+OpenAI gym package is used to provide the simulation environment. State space for this problem is expanded by the location and speed of cart and angle and angular velocity of the pole (denoted by x, x_dot, theta, theta_dot respectively).
+The simulation of this system starts with a small random purtubation on these system state.
 A force in either left or right direction is applied to the cart to balance the pole.
-The trial will be terminated if the system has been balancing for more than 4 seconds. And a trial will be terminated as well whenever the state variables exit a given threshold. 
-The **objective** of the control algorithm is to make system to stay in a given region of state space as long as posible.
+A trial will be terminated if the system has been balancing for more than 4 seconds. It will be terminated as well whenever the state variables exit a given threshold. 
+The **objective** of the control algorithm is to make system to stay in a given region of state space as long as posible. Default physical parameters of this problem are:
 
 | Left-aligned | Center-aligned |
 |  :---:       |     :---:      |    
@@ -49,7 +49,7 @@ The **objective** of the control algorithm is to make system to stay in a given 
 
 It is also fine if you wish to change these paramters to your own values. You can find them under gym_installation_dir/envs/classic_control/cartpole.py.
 
-More details about the setup of the pysical environment can be found in the [gym documents](https://github.com/openai/gym/wiki/CartPole-v0).
+More details about the setup of this pysical environment can be found in the [gym documents](https://github.com/openai/gym/wiki/CartPole-v0).
 Details on how to derive the governing equations for single pole can be found at [this technical report](https://pdfs.semanticscholar.org/3dd6/7d8565480ddb5f3c0b4ea6be7058e77b4172.pdf).
 Corresponding equations for how to generalize this to multiple poles can also be found at [this paper](http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=155416)
 
@@ -57,11 +57,11 @@ Corresponding equations for how to generalize this to multiple poles can also be
 
 ## Controller
 
-A two layer MLP is used as controller. The network struction is:
+A single layer neural network is used as controller. The network struction is:
 
 ![MLP](/../master/readme/cart-pole-controller.png)
 
-It is found that a single layer is already sufficient in this environment setting. If needed, you can replace the network with a more complex one. Stochastic gradient descent with momentum is used to train this network:
+It is found that a single layer is already sufficient for this environment setting. If needed, you can replace the network with a more complex one. Stochastic gradient descent with momentum is used to train this network:
 
 ![SGD](https://wikimedia.org/api/rest_v1/media/math/render/svg/4895d44c0572fb2988f2f335c28cc055a7f75fa0)
 
