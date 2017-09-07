@@ -1,0 +1,57 @@
+OpenAI gym implementation of Cartpole example for MAE540
+![example](/../master/readme/openaigym.video.0.16539.video003600.mp4)
+
+## Requirements
+If you are on Ubuntu, you can install [ipython](https://ipython.org/ipython-doc/2/install/install.html), [tensorflow](https://www.tensorflow.org/install/) and [gym](https://gym.openai.com/docs) as shown below:
+```
+$pip install jupyter
+$pip install tensorflow
+$pip install gym
+```
+If you are on Ubuntu 14.04, you might also need to install ffmpeg player:
+```
+$sudo apt-get install libav-tools
+```
+
+[pyglet](http://pythonhosted.org/pyglet/)
+[mujoco](https://github.com/openai/mujoco-py#obtaining-the-binaries-and-license-key)
+[PyQt4]()
+[keras]()
+
+
+## Physical problem
+State space is expanded by the location and speed of cart and angle and angular velocity of the pole (denoted by x, x_dot, theta, theta_dot).
+A force with magnitude of 10N is applied to the system.
+The force can be in either left or right direction.
+The system stays in a given region of state space as long as posible.
+It starts with a small purtubation on the system state.
+And it will be considered as a failure trial whenever the state variables exit the region (-2.4, 2.4, -0.21, 0.21).
+
+How to optimize a system controller when the system model is unknown. 
+More details about the setup of the pysical environment can be found as [gym](https://github.com/openai/gym/wiki/CartPole-v0)
+governing equations for single pole can be found at [this technical report](https://pdfs.semanticscholar.org/3dd6/7d8565480ddb5f3c0b4ea6be7058e77b4172.pdf)
+Governing equation for multiple poles can be found at [this paper](http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=155416)
+
+
+
+## Network structure
+
+A two layer MLP is used as controller. 
+![MLP](/../subnets/assets/model.png)
+It is trained use stochastic gradient descent with momentum:
+![SGD](https://wikimedia.org/api/rest_v1/media/math/render/svg/4895d44c0572fb2988f2f335c28cc055a7f75fa0)
+update_every=3 is similar to have a batch size of 3
+normalization of inputs speed up computation
+
+## Results
+For a toy case, consider we have a collection of images of "square" and "cross+square" of different orientation and size.
+Note that we are trying to recover the information of "cross" from data directly.
+Instead, we wish the network to figure out the distribution for the "cross"  from the "cross+square" and "square" data by doing subtraction.
+
+![iteration](/../master/iteration.png)
+
+> The small window shows the location of states 
+
+
+
+
