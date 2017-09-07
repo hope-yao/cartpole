@@ -75,6 +75,8 @@ By keep default parameters, we can get a convergence curve similar to:
 
 > X axis of the big window is the total reward a policy achieves, Y axis of it is the number of current training epoch. The small window shows the relative value of cart position and pole angle w.r.t. its maximum accepted value. It can be seen that the training is occilating but achieved good policy in the end.
 
+In the meantime, a serial of the simulation videos will be saved in tmp/trial by default.
+
 ## DQN
 Rewards is normalized to speed up the training process as described in [this paper](https://arxiv.org/abs/1602.07714)
 

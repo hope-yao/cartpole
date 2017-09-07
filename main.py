@@ -184,9 +184,9 @@ def several_trials(agent, sess, grad_buffer, reward_itr, i, render = False):
     return state_history
 
 def animate_itr(i,*args):
-    agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr = args
+    agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr, render = args
 
-    state_history = several_trials(agent, sess, grad_buffer, reward_itr, i)
+    state_history = several_trials(agent, sess, grad_buffer, reward_itr, i, render)
     xlist = [range(len(reward_itr))]
     ylist = [reward_itr]
     for lnum, line in enumerate(lines_itr):
@@ -234,6 +234,11 @@ def get_fig(max_epoch):
 
 
 def main():
+    obt_itr = 10
+    max_epoch = 3000
+    render = True
+    dir = 'tmp/trial/'
+
     if len(sys.argv)==1:
         lr, momentum = 0.2, 0.95
         print("Using default learning rate = 0.2 and momentum = 0.95.")
@@ -244,14 +249,11 @@ def main():
         except :
             print("Oops! Program requires two variables.  Try again...")
             exit()
-    obt_itr = 10
-    max_epoch = 3000
     fig, ax_itr, ax_obt, time_text_obt = get_fig(max_epoch)
     global reward_itr
     reward_itr = []
-    agent = Agent(hidden_size=24, alpha=lr, gamma=momentum, dir='tmp/trial2/')
+    agent = Agent(hidden_size=24, alpha=lr, gamma=momentum, dir=dir)
     agent.show_parameters()
-    # env = gym.make('CartPole-v0')
     tfconfig = tf.ConfigProto()
     tfconfig.gpu_options.allow_growth=True
     sess = tf.Session(config=tfconfig)
@@ -259,7 +261,7 @@ def main():
     grad_buffer = sess.run(tf.trainable_variables())
     tf.reset_default_graph()
 
-    args = [agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr]
+    args = [agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr, render]
     ani = animation.FuncAnimation(fig, animate_itr,fargs=args)
     plt.show()
 
