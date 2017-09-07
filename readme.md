@@ -61,7 +61,7 @@ A two layer MLP is used as controller. The network struction is:
 
 ![MLP](/../master/readme/cart-pole-controller.png)
 
-Stochastic gradient descent with momentum is used to train this network:
+It is found that a single layer is already sufficient in this environment setting. If needed, you can replace the network with a more complex one. Stochastic gradient descent with momentum is used to train this network:
 
 ![SGD](https://wikimedia.org/api/rest_v1/media/math/render/svg/4895d44c0572fb2988f2f335c28cc055a7f75fa0)
 
@@ -69,7 +69,7 @@ You can play with its paramters by using your own inputs to main.py.
 
 
 ## Results
-By keep default parameters, we can get convergence curve similar to: 
+By keep default parameters, we can get a convergence curve similar to: 
 
 ![iteration](/../master/readme/iteration.png)
 
