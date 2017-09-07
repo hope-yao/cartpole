@@ -71,7 +71,7 @@ class Agent(object):
 
 
     def video_callable(self, episode_id):
-        # display the simulation every 50 epoch
+        # display the simulation trajectory every 50 epoch
         return episode_id % 50 == 0
 
     def next_action(self, sess, feed_dict, greedy=False):
@@ -135,7 +135,7 @@ def one_trial(agent, sess, grad_buffer, reward_itr, i, render = False):
         action = agent.next_action(sess, feed_dict, greedy=greedy)
         # get the next states after taking an action
         snext, r, done, _ = agent.env.step(action)
-        if render and i % 500 == 0:
+        if render and i % 50 == 0:
             agent.env.render()
         current_reward += r
         state_history.append(s)
