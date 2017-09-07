@@ -41,15 +41,15 @@ class Agent(object):
         self.action_pl = tf.placeholder(tf.int32, [None])
         self.reward_pl = tf.placeholder(tf.float32, [None])
         # a two-layer fully connected network
-        hidden_layer = layers.fully_connected(self.input_pl,
-                                              hidden_size,
-                                              biases_initializer=None,
-                                              activation_fn=tf.nn.relu)
+#        hidden_layer = layers.fully_connected(self.input_pl,
+#                                              hidden_size,
+#                                              biases_initializer=None,
+#                                              activation_fn=tf.nn.relu)
         # hidden_layer = layers.fully_connected(hidden_layer,
         #                                       hidden_size,
         #                                       biases_initializer=None,
         #                                       activation_fn=tf.nn.relu)
-        self.output = layers.fully_connected(hidden_layer,
+        self.output = layers.fully_connected(self.input_pl,
                                              action_size,
                                              biases_initializer=None,
                                              activation_fn=tf.nn.softmax)
@@ -188,10 +188,11 @@ def animate_itr(i,*args):
 
     state_history = several_trials(reward_itr,i)
 
-    xlist = [range(len(reward_itr))]
-    ylist = [reward_itr]
-    for lnum, line in enumerate(lines_itr):
-        line.set_data(xlist[lnum], ylist[lnum])  # set data for each line separately.
+    if len(reward_itr) % 10 == 0:
+        xlist = [range(len(reward_itr))]
+        ylist = [reward_itr]
+        for lnum, line in enumerate(lines_itr):
+            line.set_data(xlist[lnum], ylist[lnum])  # set data for each line separately.
 
     if len(reward_itr) % obt_itr == 0:
         x_mag = 2.4
@@ -208,8 +209,7 @@ def animate_itr(i,*args):
 def get_fig(max_epoch):
     fig = plt.figure()
     ax_itr = axes([0.1, 0.1, 0.8, 0.8])
-    ax_obt = axes([0.6, 0.2, .3, .3])
-    xticks([]), yticks([])
+    ax_obt = axes([0.5, 0.2, .4, .4])
 
     # able to display multiple lines if needed
     global lines_obt, lines_itr, time_text_obt
@@ -228,7 +228,7 @@ def get_fig(max_epoch):
     ax_obt.set_xlim([-1, 1])
     ax_obt.set_ylim([-1, 1])
     lines_obt = ax_obt.plot([], [], lw=1, color="red")[0]
-    time_text_obt = ax_obt.text(0.05, 0.9, '', fontsize=5, transform=ax_obt.transAxes)
+    time_text_obt = ax_obt.text(0.05, 0.9, '', fontsize=8, transform=ax_obt.transAxes)
     return fig, ax_itr, ax_obt, time_text_obt
 
 if __name__ == "__main__":
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     fig, ax_itr, ax_obt, time_text_obt = get_fig(max_epoch)
     global reward_itr
     reward_itr = []
-    agent = Agent(hidden_size=24, alpha=1e-1, gamma=0.95, dir='tmp/trial2/')
+    agent = Agent(hidden_size=24, alpha=0.3, gamma=0.95, dir='tmp/trial2/')
     agent.show_parameters()
     # env = gym.make('CartPole-v0')
     tfconfig = tf.ConfigProto()
@@ -257,5 +257,3 @@ if __name__ == "__main__":
 # print('saving animation...')
 # Writer = animation.writers['ffmpeg']
 # writer = Writer(fps=100, metadata=dict(artist='Me'), bitrate=1800)
-# ani.save('PDW.mp4', writer=writer)
-# print('animation saved')

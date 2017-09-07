@@ -37,7 +37,7 @@ Governing equation for multiple poles can be found at [this paper](http://ieeexp
 ## Network structure
 
 A two layer MLP is used as controller. 
-![MLP](/../subnets/assets/model.png)
+![MLP](/../master/assets/model.png)
 It is trained use stochastic gradient descent with momentum:
 ![SGD](https://wikimedia.org/api/rest_v1/media/math/render/svg/4895d44c0572fb2988f2f335c28cc055a7f75fa0)
 update_every=3 is similar to have a batch size of 3
@@ -48,7 +48,7 @@ For a toy case, consider we have a collection of images of "square" and "cross+s
 Note that we are trying to recover the information of "cross" from data directly.
 Instead, we wish the network to figure out the distribution for the "cross"  from the "cross+square" and "square" data by doing subtraction.
 
-![iteration](/../master/iteration.png)
+![iteration](/../master/readme/iteration.png)
 
 > The small window shows the location of states 
 

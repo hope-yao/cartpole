@@ -1,5 +1,5 @@
 OpenAI gym implementation of Cartpole example for MAE540
-![example](/../master/readme/openaigym.video.0.16539.video003600.mp4)
+![example](/../master/readme/animation.gif)
 
 ## Requirements
 If you are on Ubuntu, you can install [ipython](https://ipython.org/ipython-doc/2/install/install.html), [tensorflow](https://www.tensorflow.org/install/) and [gym](https://gym.openai.com/docs) as shown below:
@@ -12,12 +12,6 @@ If you are on Ubuntu 14.04, you might also need to install ffmpeg player:
 ```
 $sudo apt-get install libav-tools
 ```
-
-[pyglet](http://pythonhosted.org/pyglet/)
-[mujoco](https://github.com/openai/mujoco-py#obtaining-the-binaries-and-license-key)
-[PyQt4]()
-[keras]()
-
 
 ## Physical problem
 State space is expanded by the location and speed of cart and angle and angular velocity of the pole (denoted by x, x_dot, theta, theta_dot).
@@ -37,7 +31,7 @@ Governing equation for multiple poles can be found at [this paper](http://ieeexp
 ## Network structure
 
 A two layer MLP is used as controller. 
-![MLP](/../subnets/assets/model.png)
+![MLP](/../master/assets/model.png)
 It is trained use stochastic gradient descent with momentum:
 ![SGD](https://wikimedia.org/api/rest_v1/media/math/render/svg/4895d44c0572fb2988f2f335c28cc055a7f75fa0)
 update_every=3 is similar to have a batch size of 3
@@ -48,7 +42,7 @@ For a toy case, consider we have a collection of images of "square" and "cross+s
 Note that we are trying to recover the information of "cross" from data directly.
 Instead, we wish the network to figure out the distribution for the "cross"  from the "cross+square" and "square" data by doing subtraction.
 
-![iteration](/../master/iteration.png)
+![iteration](/../master/readme/iteration.png)
 
 > The small window shows the location of states 
 
