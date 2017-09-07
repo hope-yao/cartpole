@@ -12,39 +12,33 @@ import tensorflow.contrib.layers as layers
 from gym import wrappers
 
 
-def discounted_reward(rewards, gamma):
-    """Compute the discounted reward."""
-    ans = np.zeros_like(rewards)
-    running_sum = 0
-    # compute the result backward
-    for i in reversed(range(len(rewards))):
-        running_sum = running_sum * gamma + rewards[i]
-        ans[i] = running_sum
-    return ans
-
-
 class Agent(object):
     def __init__(self, input_size=4, hidden_size=2, gamma=0.95,
-                 action_size=2, alpha=0.1, dir='tmp/trial/'):
+                 action_size=2, lr=0.1, dir='tmp/trial/'):
+        # call the cartpole simulator from OpenAI gym package
         self.env = gym.make('CartPole-v0')
+        # If you wish to save the simulation video, simply uncomment the line below
         # self.env = wrappers.Monitor(self.env, dir, force=True, video_callable=self.video_callable)
 
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.gamma = gamma
         self.action_size = action_size
-        self.alpha = alpha
+        self.lr = lr
         # save the hyper parameters
         self.params = self.__dict__.copy()
-        # placeholders
+
+        # inputs to the controller
         self.input_pl = tf.placeholder(tf.float32, [None, input_size])
         self.action_pl = tf.placeholder(tf.int32, [None])
         self.reward_pl = tf.placeholder(tf.float32, [None])
-        # a two-layer fully connected network
-#        hidden_layer = layers.fully_connected(self.input_pl,
-#                                              hidden_size,
-#                                              biases_initializer=None,
-#                                              activation_fn=tf.nn.relu)
+
+        # Here we use a single layered neural network as controller, which proved to be sufficient enough.
+        # More complicated ones can be plugged in as well.
+        # hidden_layer = layers.fully_connected(self.input_pl,
+        #                                      hidden_size,
+        #                                      biases_initializer=None,
+        #                                      activation_fn=tf.nn.relu)
         # hidden_layer = layers.fully_connected(hidden_layer,
         #                                       hidden_size,
         #                                       biases_initializer=None,
@@ -53,22 +47,31 @@ class Agent(object):
                                              action_size,
                                              biases_initializer=None,
                                              activation_fn=tf.nn.softmax)
+
         # responsible output
         self.one_hot = tf.one_hot(self.action_pl, action_size)
         self.responsible_output = tf.reduce_sum(self.output * self.one_hot, axis=1)
+
+        # loss value of the network
         self.loss = -tf.reduce_mean(tf.log(self.responsible_output) * self.reward_pl)
-        # training variables
+
+        # get all network variables
         variables = tf.trainable_variables()
         self.variable_pls = []
         for i, var in enumerate(variables):
             self.variable_pls.append(tf.placeholder(tf.float32))
+
+        # compute the gradient values
         self.gradients = tf.gradients(self.loss, variables)
-        solver = tf.train.AdamOptimizer(learning_rate=alpha)
-        solver = tf.train.MomentumOptimizer(learning_rate=alpha,momentum=0.9)
+
+        # update network variables
+        solver = tf.train.AdamOptimizer(learning_rate=self.lr)
+        # solver = tf.train.MomentumOptimizer(learning_rate=self.lr,momentum=0.95)
         self.update = solver.apply_gradients(zip(self.variable_pls, variables))
 
 
     def video_callable(self, episode_id):
+        # display the simulation every 50 epoch
         return episode_id % 50 == 0
 
     def next_action(self, sess, feed_dict, greedy=False):
@@ -91,22 +94,46 @@ class Agent(object):
         for key, value in self.params.items():
             print(key, '=', value)
 
-
-
+def discounted_reward(rewards, gamma):
+    """Compute the discounted reward."""
+    ans = np.zeros_like(rewards)
+    running_sum = 0
+    # compute the result backward
+    for i in reversed(range(len(rewards))):
+        running_sum = running_sum * gamma + rewards[i]
+        ans[i] = running_sum
+    return ans
 
 def one_trial(agent, sess, grad_buffer, reward_itr, i, render = False):
+    '''
+    this function does follow things before a trial is done:
+    1. get a sequence of actions based on the current state and a given control policy
+    2. get the system response of a given action
+    3. get the instantaneous reward of this action
+    once a trial is done:
+    1. get the "long term" value of the controller
+    2. get the gradient of the controller
+    3. update the controller variables
+    4. output the state history
+    '''
+
+    # reset the environment
+    s = agent.env.reset()
     for idx in range(len(grad_buffer)):
         grad_buffer[idx] *= 0
-    s = agent.env.reset()
     state_history = []
     reward_history = []
     action_history = []
     current_reward = 0
 
     while True:
+
         feed_dict = {agent.input_pl: [s]}
+        # update the controller deterministically
         greedy = False
+        # get the controller output under a given state
         action = agent.next_action(sess, feed_dict, greedy=greedy)
+        # get the next states after taking an action
         snext, r, done, _ = agent.env.step(action)
         if render and i % 500 == 0:
             agent.env.render()
@@ -115,11 +142,19 @@ def one_trial(agent, sess, grad_buffer, reward_itr, i, render = False):
         reward_history.append(r)
         action_history.append(action)
         s = snext
+
         if done:
+
+            # record how long it has been balancing when the simulation is done
             reward_itr += [current_reward]
+
+            # get the "long term" rewards by taking decay parameter gamma into consideration
             rewards = discounted_reward(reward_history, agent.gamma)
-            # normalizing the reward really helps
+
+            # normalizing the reward makes training faster
             rewards = (rewards - np.mean(rewards)) / np.std(rewards)
+
+            # compute network gradients
             feed_dict = {
                 agent.reward_pl: rewards,
                 agent.action_pl: action_history,
@@ -129,64 +164,22 @@ def one_trial(agent, sess, grad_buffer, reward_itr, i, render = False):
             for idx, grad in enumerate(episode_gradients):
                 grad_buffer[idx] += grad
 
+            # apply gradients to the network variables
             feed_dict = dict(zip(agent.variable_pls, grad_buffer))
             sess.run(agent.update, feed_dict=feed_dict)
+
             # reset the buffer to zero
             for idx in range(len(grad_buffer)):
                 grad_buffer[idx] *= 0
             break
-    return state_history
-
-
-def several_trials(agent, sess, grad_buffer, reward_itr, i, render = False):
-    update_every = 3
-    for j in range(update_every):
-        s = agent.env.reset()
-        state_history = []
-        reward_history = []
-        action_history = []
-        current_reward = 0
-        while True:
-            feed_dict = {agent.input_pl: [s]}
-            greedy = False
-            action = agent.next_action(sess, feed_dict, greedy=greedy)
-            snext, r, done, _ = agent.env.step(action)
-            if render and i % 50 == 0:
-                agent.env.render()
-            current_reward += r
-            state_history.append(s)
-            reward_history.append(r)
-            action_history.append(action)
-            s = snext
-            if done:
-                reward_itr += [current_reward]
-                rewards = discounted_reward(reward_history, agent.gamma)
-                # normalizing the reward really helps
-                rewards = (rewards - np.mean(rewards)) / np.std(rewards)
-                feed_dict = {
-                    agent.reward_pl: rewards,
-                    agent.action_pl: action_history,
-                    agent.input_pl:  np.array(state_history)
-                }
-                episode_gradients = sess.run(agent.gradients,
-                                             feed_dict=feed_dict)
-                for idx, grad in enumerate(episode_gradients):
-                    grad_buffer[idx] += grad
-
-                if i % update_every == 0:
-                    feed_dict = dict(zip(agent.variable_pls, grad_buffer))
-                    sess.run(agent.update, feed_dict=feed_dict)
-                    # reset the buffer to zero
-                    for idx in range(len(grad_buffer)):
-                        grad_buffer[idx] *= 0
-                break
 
     return state_history
 
 def animate_itr(i,*args):
+    '''animantion of each training epoch'''
     agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr, render = args
-
-    state_history = several_trials(agent, sess, grad_buffer, reward_itr, i, render)
+    #
+    state_history = one_trial(agent, sess, grad_buffer, reward_itr, i, render)
     xlist = [range(len(reward_itr))]
     ylist = [reward_itr]
     for lnum, line in enumerate(lines_itr):
@@ -236,24 +229,16 @@ def get_fig(max_epoch):
 def main():
     obt_itr = 10
     max_epoch = 3000
+    # whether to show the pole balancing animation
     render = True
     dir = 'tmp/trial/'
 
-    if len(sys.argv)==1:
-        lr, momentum = 0.2, 0.95
-        print("Using default learning rate = 0.2 and momentum = 0.95.")
-    else:
-        try:
-            lr,momentum = sys.argv[1:]
-            print("Using customized learning rate = %f and momentum = %f." %(lr,momentum))
-        except :
-            print("Oops! Program requires two variables.  Try again...")
-            exit()
+    # set up figure for animation
     fig, ax_itr, ax_obt, time_text_obt = get_fig(max_epoch)
-    global reward_itr
-    reward_itr = []
-    agent = Agent(hidden_size=24, alpha=lr, gamma=momentum, dir=dir)
+    agent = Agent(hidden_size=24, lr=0.2, gamma=0.95, dir=dir)
     agent.show_parameters()
+
+    # tensorflow initialization for neural network controller
     tfconfig = tf.ConfigProto()
     tfconfig.gpu_options.allow_growth=True
     sess = tf.Session(config=tfconfig)
@@ -261,7 +246,10 @@ def main():
     grad_buffer = sess.run(tf.trainable_variables())
     tf.reset_default_graph()
 
+    global reward_itr
+    reward_itr = []
     args = [agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr, render]
+    # run the optimization and output animation
     ani = animation.FuncAnimation(fig, animate_itr,fargs=args)
     plt.show()
 
