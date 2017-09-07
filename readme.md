@@ -34,8 +34,9 @@ $python main.py <lr> <momentum>
 State space is expanded by the location and speed of cart and angle and angular velocity of the pole (denoted by x, x_dot, theta, theta_dot).
 It starts with a small purtubation on the system state.
 A force in either left or right direction is applied to the cart to balance the pole.
-And it will be considered as a failure trial whenever the state variables exit a certain threshold. 
-The objective of the control algorithm is to make system to stay in a given region of state space as long as posible.
+The trial will be terminated if the system has been balancing for more than 4 seconds. And a trial will be terminated as well whenever the state variables exit a given threshold. 
+The **objective** of the control algorithm is to make system to stay in a given region of state space as long as posible.
+
 | Left-aligned | Center-aligned |
 |  :---:       |     :---:      |    
 | mass cart   | 1.0     | 
@@ -45,6 +46,7 @@ The objective of the control algorithm is to make system to stay in a given regi
 | delta_t      | 0.02       |
 | theta_threshold      | 12 (degrees)       |
 | delta_t      | 2.4       |
+
 It is also fine if you wish to change these paramters to your own values. You can find them under gym_installation_dir/envs/classic_control/cartpole.py.
 
 More details about the setup of the pysical environment can be found in the [gym documents](https://github.com/openai/gym/wiki/CartPole-v0).
