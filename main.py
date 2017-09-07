@@ -94,7 +94,7 @@ class Agent(object):
 
 
 
-def one_trial(reward_itr, i, render = False):
+def one_trial(agent, sess, grad_buffer, reward_itr, i, render = False):
     for idx in range(len(grad_buffer)):
         grad_buffer[idx] *= 0
     s = agent.env.reset()
@@ -138,7 +138,7 @@ def one_trial(reward_itr, i, render = False):
     return state_history
 
 
-def several_trials(reward_itr, i, render = False):
+def several_trials(agent, sess, grad_buffer, reward_itr, i, render = False):
     update_every = 3
     for j in range(update_every):
         s = agent.env.reset()
@@ -184,15 +184,13 @@ def several_trials(reward_itr, i, render = False):
     return state_history
 
 def animate_itr(i,*args):
-    reward_itr, sess, grad_buffer, Agent, obt_itr = args
+    agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr = args
 
-    state_history = several_trials(reward_itr,i)
-
-    if len(reward_itr) % 10 == 0:
-        xlist = [range(len(reward_itr))]
-        ylist = [reward_itr]
-        for lnum, line in enumerate(lines_itr):
-            line.set_data(xlist[lnum], ylist[lnum])  # set data for each line separately.
+    state_history = several_trials(agent, sess, grad_buffer, reward_itr, i)
+    xlist = [range(len(reward_itr))]
+    ylist = [reward_itr]
+    for lnum, line in enumerate(lines_itr):
+        line.set_data(xlist[lnum], ylist[lnum])  # set data for each line separately.
 
     if len(reward_itr) % obt_itr == 0:
         x_mag = 2.4
@@ -201,7 +199,8 @@ def animate_itr(i,*args):
         xlist = [np.asarray(state_history)[:,0] / x_mag]
         ylist = [np.asarray(state_history)[:,2] / y_mag]
         lines_obt.set_data(xlist, ylist)
-        time_text_obt.set_text('time = %6.2fs' % len(xlist[0]))
+        tau = 0.02
+        time_text_obt.set_text('physical time = %6.2fs' % (len(xlist[0])*tau))
 
     return (lines_itr,) + (lines_obt,) + (time_text_obt,)
 
@@ -209,7 +208,7 @@ def animate_itr(i,*args):
 def get_fig(max_epoch):
     fig = plt.figure()
     ax_itr = axes([0.1, 0.1, 0.8, 0.8])
-    ax_obt = axes([0.5, 0.2, .4, .4])
+    ax_obt = axes([0.5, 0.2, .3, .3])
 
     # able to display multiple lines if needed
     global lines_obt, lines_itr, time_text_obt
@@ -227,18 +226,30 @@ def get_fig(max_epoch):
     time_text_obt = []
     ax_obt.set_xlim([-1, 1])
     ax_obt.set_ylim([-1, 1])
+    ax_obt.set_xlabel('cart position')
+    ax_obt.set_ylabel('pole angle')
     lines_obt = ax_obt.plot([], [], lw=1, color="red")[0]
-    time_text_obt = ax_obt.text(0.05, 0.9, '', fontsize=8, transform=ax_obt.transAxes)
+    time_text_obt = ax_obt.text(0.05, 0.9, '', fontsize=13, transform=ax_obt.transAxes)
     return fig, ax_itr, ax_obt, time_text_obt
 
-if __name__ == "__main__":
-    # main()
+
+def main():
+    if len(sys.argv)==1:
+        lr, momentum = 0.2, 0.95
+        print("Using default learning rate = 0.2 and momentum = 0.95.")
+    else:
+        try:
+            lr,momentum = sys.argv[1:]
+            print("Using customized learning rate = %f and momentum = %f." %(lr,momentum))
+        except :
+            print("Oops! Program requires two variables.  Try again...")
+            exit()
     obt_itr = 10
     max_epoch = 3000
     fig, ax_itr, ax_obt, time_text_obt = get_fig(max_epoch)
     global reward_itr
     reward_itr = []
-    agent = Agent(hidden_size=24, alpha=0.3, gamma=0.95, dir='tmp/trial2/')
+    agent = Agent(hidden_size=24, alpha=lr, gamma=momentum, dir='tmp/trial2/')
     agent.show_parameters()
     # env = gym.make('CartPole-v0')
     tfconfig = tf.ConfigProto()
@@ -248,10 +259,12 @@ if __name__ == "__main__":
     grad_buffer = sess.run(tf.trainable_variables())
     tf.reset_default_graph()
 
-    args = [reward_itr, sess, grad_buffer, agent, obt_itr]
+    args = [agent, sess, grad_buffer, reward_itr, sess, grad_buffer, agent, obt_itr]
     ani = animation.FuncAnimation(fig, animate_itr,fargs=args)
     plt.show()
 
+if __name__ == "__main__":
+   main()
 
 # Set up formatting for the movie files
 # print('saving animation...')
